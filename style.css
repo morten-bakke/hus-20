@@ -1,0 +1,235 @@
+/* Boligkalkulator Oslo — Custom Styles */
+
+:root {
+  --green: #10b981;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #f8fafc;
+}
+
+/* Status badges */
+.badge-pass {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+.badge-fail {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.badge-warn {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 1.25rem;
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.card-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+.card-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+/* Tabs */
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.tab-btn:hover {
+  color: #1e293b;
+}
+.tab-btn.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
+
+/* Inputs */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.input-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.input-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--blue);
+}
+.input-group input[type="number"] {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: #f8fafc;
+}
+.input-group input[type="number"]:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.input-row input[type="range"] {
+  flex: 1;
+}
+.input-row .input-value {
+  min-width: 80px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+/* Chart containers */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+/* Table styling */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.data-table th {
+  background: #f1f5f9;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.data-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+.data-table tr:hover td {
+  background: #f8fafc;
+}
+.data-table .highlight {
+  background: #eff6ff;
+  font-weight: 600;
+}
+.data-table .stress-row {
+  background: #fef2f2;
+}
+.data-table .feasible-row {
+  background: #f0fdf4;
+  font-weight: 600;
+}
+.data-table td.number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sensitivity colors */
+.ratio-good { color: var(--green); font-weight: 600; }
+.ratio-warn { color: var(--amber); font-weight: 600; }
+.ratio-bad { color: var(--red); font-weight: 600; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card-value { font-size: 1.2rem; }
+  .tab-btn { font-size: 0.75rem; padding: 0.4rem 0.6rem; }
+  .chart-container { height: 250px; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .card { box-shadow: none; border: 1px solid #e2e8f0; }
+  body { background: white; }
+}
+
+/* Info tooltip */
+.info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 10px;
+  cursor: help;
+  margin-left: 4px;
+  font-weight: 700;
+}
+
+/* Scenario toggle */
+.scenario-toggle {
+  display: inline-flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+.scenario-toggle button {
+  padding: 0.4rem 1rem;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+}
+.scenario-toggle button.active {
+  background: var(--blue);
+  color: white;
+}
