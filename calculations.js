@@ -129,11 +129,15 @@ window.Calc = (function () {
     const rentalForLoan = (p.annualRentalIncome || 0) * (p.rentalIncomeWeight || 0.6);
     const effectiveIncome = p.grossIncome + rentalForLoan;
 
-    const maxLoan5x = effectiveIncome * 5;
-    const incomeRuleMet = loanNeeded <= maxLoan5x;
-    const gap = maxLoan5x - loanNeeded;
+    // 5x rule applies to TOTAL debt (mortgage + student loan + any other debt)
+    const otherDebt = p.otherDebt || 0;
+    const totalDebt = loanNeeded + otherDebt;
+    const maxTotalDebt5x = effectiveIncome * 5;
+    const maxMortgage5x = maxTotalDebt5x - otherDebt; // room for mortgage after other debt
+    const incomeRuleMet = totalDebt <= maxTotalDebt5x;
+    const gap = maxMortgage5x - loanNeeded; // gap is how much room you have for the mortgage
 
-    const debtToIncome = loanNeeded / effectiveIncome;
+    const debtToIncome = totalDebt / effectiveIncome;
 
     return {
       equityFromSale: Math.round(equityFromSale),
@@ -143,7 +147,10 @@ window.Calc = (function () {
       equityMet,
       equityPct: totalEquity / p.housePurchasePrice,
       loanNeeded: Math.round(loanNeeded),
-      maxLoan5x: Math.round(maxLoan5x),
+      otherDebt: Math.round(otherDebt),
+      totalDebt: Math.round(totalDebt),
+      maxTotalDebt5x: Math.round(maxTotalDebt5x),
+      maxMortgage5x: Math.round(maxMortgage5x),
       effectiveIncome: Math.round(effectiveIncome),
       incomeRuleMet,
       gap: Math.round(gap),

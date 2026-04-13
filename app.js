@@ -135,6 +135,10 @@
     newOther: 0,
     // Savings / additional equity
     savings: 1_000_000, // sparepenger, BSU, aksjer, fond
+    // Other debt
+    studentLoan: 1_000_000,
+    studentLoanRate: 4.6,
+    studentLoanTermYears: 20,
     // Rental income
     monthlyRentalIncome: 15_000,
     rentalIncomeWeight: 0.6, // bank weighting
@@ -239,6 +243,7 @@
       annualRentalIncome: annualRental,
       rentalIncomeWeight: state.rentalIncomeWeight,
       savings: state.savings,
+      otherDebt: state.studentLoan,
     });
 
     // 2. Tax
@@ -352,15 +357,18 @@
     const sifoForChart = SIFO[state.householdType].total;
     const elecForChart = state.monthlyElectricity;
     const netForChart = Math.round(tax.totalNet / 12);
+    const studentLoanForChart = state.studentLoan > 0
+      ? Calc.annuity(state.studentLoan, state.studentLoanRate, state.studentLoanTermYears).monthly : 0;
     Charts.renderCashFlow('chart-cashflow', {
       grossIncome: Math.round(state.grossIncome / 12),
       tax: Math.round(tax.totalTax / 12),
       netIncome: netForChart,
       housingCosts: costs.new.total,
       rentalIncome: state.monthlyRentalIncome,
+      studentLoan: studentLoanForChart,
       sifoCosts: sifoForChart,
       electricity: elecForChart,
-      remaining: netForChart - costs.new.total + state.monthlyRentalIncome - sifoForChart - elecForChart,
+      remaining: netForChart - costs.new.total + state.monthlyRentalIncome - sifoForChart - elecForChart - studentLoanForChart,
     });
   }
 
@@ -377,14 +385,20 @@
 
     // Loan needed card
     setHtml('dash-loan-value', 'kr ' + NOK(eq.loanNeeded));
-    setHtml('dash-loan-sub', 'Total kjøpskostnad: kr ' + NOK(eq.totalPurchaseCost));
+    const debtNote = eq.otherDebt > 0
+      ? `Boliglån: ${NOK(eq.loanNeeded)} + Studielån: ${NOK(eq.otherDebt)} = Total gjeld: ${NOK(eq.totalDebt)}`
+      : 'Total kjøpskostnad: kr ' + NOK(eq.totalPurchaseCost);
+    setHtml('dash-loan-sub', debtNote);
 
-    // 5x income card
-    setHtml('dash-5x-value', 'kr ' + NOK(eq.maxLoan5x));
+    // 5x income card — now shows total debt vs max
+    setHtml('dash-5x-value', 'kr ' + NOK(eq.maxTotalDebt5x));
     const gapText = eq.gap >= 0
       ? 'Margin: kr ' + NOK(eq.gap)
       : 'Mangler: kr ' + NOK(Math.abs(eq.gap));
-    setHtml('dash-5x-sub', `Gjeldsgrad: ${eq.debtToIncome}x | ${gapText}`);
+    const debtBreakdown = eq.otherDebt > 0
+      ? `Total gjeld: ${NOK(eq.totalDebt)} (${eq.debtToIncome}x) | ${gapText}`
+      : `Gjeldsgrad: ${eq.debtToIncome}x | ${gapText}`;
+    setHtml('dash-5x-sub', debtBreakdown);
     if (eq.effectiveIncome > state.grossIncome) {
       setHtml('dash-5x-rental', `Inkl. leieinntekt (${Math.round(state.rentalIncomeWeight*100)}%): kr ${NOK(eq.effectiveIncome)}`);
     } else {
@@ -406,9 +420,14 @@
     const stressPayment = af.monthlyPaymentStress;
     const otherHousing = state.newKommunale + state.newInsurance + state.newMaintenance + state.newOther;
     const rentalOffset = state.monthlyRentalIncome;
-    const bankRemaining = monthlyNet - stressPayment - otherHousing + rentalOffset - sifo.total - state.monthlyElectricity;
+    const dashStudentLoan = state.studentLoan > 0
+      ? Calc.annuity(state.studentLoan, state.studentLoanRate, state.studentLoanTermYears).monthly : 0;
+    const bankRemaining = monthlyNet - stressPayment - otherHousing + rentalOffset - sifo.total - state.monthlyElectricity - dashStudentLoan;
     setHtml('dash-sifo-value', 'kr ' + NOK(bankRemaining) + '/mnd');
-    setHtml('dash-sifo-sub', `SIFO ${sifo.label}: kr ${NOK(sifo.total)} + strøm: kr ${NOK(state.monthlyElectricity)}`);
+    const sifoSubParts = [`SIFO: ${NOK(sifo.total)}`];
+    if (dashStudentLoan > 0) sifoSubParts.push(`studielån: ${NOK(dashStudentLoan)}`);
+    sifoSubParts.push(`strøm: ${NOK(state.monthlyElectricity)}`);
+    setHtml('dash-sifo-sub', sifoSubParts.join(' + '));
     setClass('dash-sifo-badge', bankRemaining >= 0 ? 'badge-pass' : 'badge-fail');
     setHtml('dash-sifo-badge', bankRemaining >= 0 ? 'Likviditet OK' : 'Ikke nok til overs');
   }
@@ -438,8 +457,18 @@
       <tr><td><strong>= Totalt behov</strong></td><td class="number"><strong>kr ${NOK(eq.totalPurchaseCost)}</strong></td></tr>
       <tr><td>&nbsp;</td><td></td></tr>
       <tr class="${eq.gap >= 0 ? 'feasible-row' : 'stress-row'}">
-        <td><strong>Lånebehov</strong></td><td class="number"><strong>kr ${NOK(eq.loanNeeded)}</strong></td></tr>
-      <tr><td>Maks lån (5x inntekt)</td><td class="number">kr ${NOK(eq.maxLoan5x)}</td></tr>
+        <td><strong>Boliglån behov</strong></td><td class="number"><strong>kr ${NOK(eq.loanNeeded)}</strong></td></tr>
+      ${eq.otherDebt > 0 ? `
+      <tr><td>&nbsp;</td><td></td></tr>
+      <tr style="background:#f0f9ff"><td colspan="2"><strong>Gjeldsgrad (5x-regel)</strong></td></tr>
+      <tr><td>Boliglån</td><td class="number">kr ${NOK(eq.loanNeeded)}</td></tr>
+      <tr><td>+ Studielån</td><td class="number">kr ${NOK(eq.otherDebt)}</td></tr>
+      <tr class="highlight"><td><strong>= Total gjeld</strong></td><td class="number"><strong>kr ${NOK(eq.totalDebt)}</strong></td></tr>
+      <tr><td>Maks total gjeld (5x)</td><td class="number">kr ${NOK(eq.maxTotalDebt5x)}</td></tr>
+      <tr><td>Maks boliglån (5x − studielån)</td><td class="number">kr ${NOK(eq.maxMortgage5x)}</td></tr>
+      ` : `
+      <tr><td>Maks lån (5x inntekt)</td><td class="number">kr ${NOK(eq.maxTotalDebt5x)}</td></tr>
+      `}
       <tr class="${eq.gap >= 0 ? 'feasible-row' : 'stress-row'}">
         <td><strong>${eq.gap >= 0 ? 'Margin' : 'Gap (trenger unntak)'}</strong></td>
         <td class="number"><strong>kr ${NOK(Math.abs(eq.gap))}</strong></td></tr>
@@ -507,17 +536,19 @@
     const sifo = SIFO[state.householdType];
     const sifoTotal = sifo.total;
     const electricity = state.monthlyElectricity;
-    const remaining = monthlyNet - housingCost + monthlyRental - sifoTotal - electricity;
+
+    // Student loan monthly payment
+    const studentLoanMonthly = state.studentLoan > 0
+      ? Calc.annuity(state.studentLoan, state.studentLoanRate, state.studentLoanTermYears).monthly
+      : 0;
+
+    const remaining = monthlyNet - housingCost + monthlyRental - sifoTotal - electricity - studentLoanMonthly;
 
     // Bank's stress test view
     const stressRate = Math.max(state.interestRate + 3, 7);
-    const stressPayment = Calc.annuity(costs.new.mortgage > 0 ?
-      (costs.new.mortgage * state.loanTermYears * 12 / (1 + 0)) : 0, // approximate
-      stressRate, state.loanTermYears).monthly;
-    // Use actual loan needed for stress calc
     const stressMonthly = afford.monthlyPaymentStress;
     const bankHousingStress = stressMonthly + state.newKommunale + state.newInsurance + state.newMaintenance + state.newOther - monthlyRental;
-    const bankTotal = bankHousingStress + sifoTotal + electricity;
+    const bankTotal = bankHousingStress + studentLoanMonthly + sifoTotal + electricity;
     const bankRemaining = monthlyNet - bankTotal;
     const bankPasses = bankRemaining >= 0;
 
@@ -526,6 +557,7 @@
       <tr><td>- Skatt (effektiv ${PCT(tax.effectiveRate)})</td><td class="number">kr ${NOK(Math.round(tax.totalTax / 12))}/mnd</td></tr>
       <tr class="highlight"><td><strong>Netto inntekt</strong></td><td class="number"><strong>kr ${NOK(monthlyNet)}/mnd</strong></td></tr>
       <tr><td>- Boutgifter ny bolig</td><td class="number">kr ${NOK(housingCost)}/mnd</td></tr>
+      ${studentLoanMonthly > 0 ? `<tr><td>- Studielån (${state.studentLoanRate}%, ${state.studentLoanTermYears} år)</td><td class="number">kr ${NOK(studentLoanMonthly)}/mnd</td></tr>` : ''}
       ${monthlyRental > 0 ? `<tr><td>+ Leieinntekt</td><td class="number">kr ${NOK(monthlyRental)}/mnd</td></tr>` : ''}
       <tr><td>- SIFO levekostnader (${sifo.label})</td><td class="number">kr ${NOK(sifoTotal)}/mnd</td></tr>
       <tr><td>- Strøm</td><td class="number">kr ${NOK(electricity)}/mnd</td></tr>
@@ -537,7 +569,8 @@
     setHtml('bank-perspective', `
       <table class="data-table">
         <tr><td>Netto inntekt</td><td class="number">kr ${NOK(monthlyNet)}/mnd</td></tr>
-        <tr><td>- Lånekostnad ved stresstest (${stressRate.toFixed(1)}%)</td><td class="number">kr ${NOK(stressMonthly)}/mnd</td></tr>
+        <tr><td>- Boliglån ved stresstest (${stressRate.toFixed(1)}%)</td><td class="number">kr ${NOK(stressMonthly)}/mnd</td></tr>
+        ${studentLoanMonthly > 0 ? `<tr><td>- Studielån (${NOK(state.studentLoan)}, ${state.studentLoanRate}%)</td><td class="number">kr ${NOK(studentLoanMonthly)}/mnd</td></tr>` : ''}
         <tr><td>- Andre boutgifter</td><td class="number">kr ${NOK(state.newKommunale + state.newInsurance + state.newMaintenance + state.newOther)}/mnd</td></tr>
         ${monthlyRental > 0 ? `<tr><td>+ Leieinntekt</td><td class="number">kr ${NOK(monthlyRental)}/mnd</td></tr>` : ''}
         <tr><td>- SIFO levekostnader (${sifo.label})</td><td class="number">kr ${NOK(sifoTotal)}/mnd</td></tr>

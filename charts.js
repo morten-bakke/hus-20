@@ -336,13 +336,19 @@ window.Charts = (function () {
   // Cash flow waterfall
   // ---------------------------------------------------------------------------
   function renderCashFlow(canvasId, data) {
-    const labels = ['Brutto', 'Skatt', 'Netto', 'Bolig', 'Leie-inn', 'SIFO', 'Strøm', 'Til overs'];
+    const hasStudentLoan = (data.studentLoan || 0) > 0;
+    const labels = ['Brutto', 'Skatt', 'Netto', 'Bolig',
+      ...(hasStudentLoan ? ['Studielån'] : []),
+      'Leie-inn', 'SIFO', 'Strøm', 'Til overs'];
     const values = [data.grossIncome, -data.tax, data.netIncome, -data.housingCosts,
+      ...(hasStudentLoan ? [-(data.studentLoan)] : []),
       data.rentalIncome || 0, -(data.sifoCosts || 0), -(data.electricity || 0), data.remaining];
     const colors = values.map((v, i) => {
+      const lastIdx = values.length - 1;
       if (i === 0 || i === 2) return '#3b82f6';
-      if (i === 4) return '#10b981';
-      if (i === 7) return v >= 0 ? '#10b981' : '#ef4444';
+      if (labels[i] === 'Leie-inn') return '#10b981';
+      if (i === lastIdx) return v >= 0 ? '#10b981' : '#ef4444';
+      if (labels[i] === 'Studielån') return '#f59e0b';
       if (v < 0) return '#ef4444';
       return '#10b981';
     });
