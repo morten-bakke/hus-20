@@ -245,6 +245,58 @@
     }
   }
 
+  function initCopyEmailButton() {
+    const btn = document.getElementById('copy-email-btn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const source = document.getElementById('dnb-email-content');
+      if (!source) return;
+      const clone = source.cloneNode(true);
+
+      // Convert canvas charts to inline images
+      const origCanvases = source.querySelectorAll('canvas');
+      const cloneCanvases = clone.querySelectorAll('canvas');
+      cloneCanvases.forEach((c, i) => {
+        const img = document.createElement('img');
+        img.src = origCanvases[i].toDataURL('image/png');
+        img.style.width = '480px';
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        c.parentElement.replaceChild(img, c);
+      });
+
+      // Inline table styles for email clients
+      const s = {
+        table: 'width:480px;border-collapse:collapse;font-size:13px;font-family:Arial,sans-serif;margin-bottom:12px;',
+        td: 'padding:6px 10px;border-bottom:1px solid #e2e8f0;color:#334155;',
+        tdNum: 'padding:6px 10px;border-bottom:1px solid #e2e8f0;color:#334155;text-align:right;font-variant-numeric:tabular-nums;',
+        th: 'padding:6px 10px;background:#f1f5f9;text-align:left;font-weight:600;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;',
+        highlight: 'background:#eff6ff;font-weight:600;',
+        stress: 'background:#fef2f2;',
+        feasible: 'background:#f0fdf4;font-weight:600;',
+      };
+      clone.querySelectorAll('table').forEach(t => { t.setAttribute('style', s.table); });
+      clone.querySelectorAll('th').forEach(th => { th.setAttribute('style', s.th); });
+      clone.querySelectorAll('td').forEach(td => {
+        const row = td.parentElement;
+        let base = td.classList.contains('number') ? s.tdNum : s.td;
+        if (row.classList.contains('highlight')) base += s.highlight;
+        else if (row.classList.contains('stress-row')) base += s.stress;
+        else if (row.classList.contains('feasible-row')) base += s.feasible;
+        td.setAttribute('style', base);
+      });
+
+      try {
+        const blob = new Blob([clone.innerHTML], { type: 'text/html' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+        btn.textContent = 'Kopiert!';
+      } catch {
+        btn.textContent = 'Feil — prøv igjen';
+      }
+      setTimeout(() => { btn.textContent = 'Kopier til e-post'; }, 2000);
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Recalculate everything
   // ---------------------------------------------------------------------------
@@ -601,18 +653,16 @@
     const lastRate = r.points[r.points.length - 1].rate;
     let txt;
     if (r.breakEvenRate == null) {
-      txt = `Likviditetsoverskuddet holder seg positivt i hele det viste renteintervallet (opp til ${c(lastRate, 1)} %). `
-        + `Ved 3 pp-stresstesten (${c(r.stressRate, 1)} %) er det kr ${NOK(r.stressSurplus)}/mnd til overs.`;
+      txt = `Likviditetsoverskuddet holder seg positivt i hele det viste renteintervallet opp til ${c(lastRate, 1)} %, `
+        + `og ved forskriftens stresstest på ${c(r.stressRate, 1)} % har vi fortsatt kr ${NOK(r.stressSurplus)}/mnd til overs.`;
     } else if (r.headroomPP >= 0) {
       const stressInside = r.stressRate <= r.breakEvenRate;
-      txt = `Renten kan stige til ${c(r.breakEvenRate, 2)} % — +${c(r.headroomPP, 2)} prosentpoeng fra dagens ${c(r.currentRate, 2)} % — `
-        + `før likviditetsoverskuddet blir null. 3 pp-stresstesten på ${c(r.stressRate, 1)} % ligger `
-        + (stressInside
-          ? `innenfor tåleevnen (kr ${NOK(r.stressSurplus)}/mnd til overs).`
-          : `utenfor tåleevnen (kr ${NOK(Math.abs(r.stressSurplus))}/mnd i underskudd).`);
+      txt = stressInside
+        ? `Ved forskriftens stresstest (høyeste av 7 % og dagens rente + 3 pp, dvs. ${c(r.stressRate, 1)} %) har vi fortsatt kr ${NOK(r.stressSurplus)}/mnd til overs etter alle faste utgifter og SIFO-budsjett.`
+        : `Ved forskriftens stresstest (høyeste av 7 % og dagens rente + 3 pp, dvs. ${c(r.stressRate, 1)} %) gir det et underskudd på kr ${NOK(Math.abs(r.stressSurplus))}/mnd.`;
     } else {
-      txt = `Dagens rente (${c(r.currentRate, 2)} %) ligger allerede over tåleevnen på ${c(r.breakEvenRate, 2)} % — `
-        + `likviditetsoverskuddet er negativt. 3 pp-stresstesten på ${c(r.stressRate, 1)} % gir kr ${NOK(Math.abs(r.stressSurplus))}/mnd i underskudd.`;
+      txt = `Ved dagens rente på ${c(r.currentRate, 2)} % er likviditetsoverskuddet allerede negativt. Tåleevnen ligger på ${c(r.breakEvenRate, 2)} %. `
+        + `Stresstesten på ${c(r.stressRate, 1)} % gir et underskudd på kr ${NOK(Math.abs(r.stressSurplus))}/mnd.`;
     }
     el.textContent = txt;
   }
@@ -674,7 +724,6 @@
     const rnTgt = document.getElementById('dnb-resilience-note');
     if (rnSrc && rnTgt) rnTgt.textContent = rnSrc.textContent;
 
-    Charts.renderCashFlow('dnb-chart-cashflow', cashFlowData);
     Charts.renderResilience('dnb-chart-resilience', resilience);
   }
 
@@ -777,6 +826,7 @@
     bindInputs();
     initTabs();
     initHouseholdSelect();
+    initCopyEmailButton();
     recalculateAll();
 
     // Update all display values on load

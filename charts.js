@@ -17,12 +17,25 @@ window.Charts = (function () {
 
   const NOK = (v) => new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 }).format(v);
 
+  // Office/Teams color palette
+  const C = {
+    blue:   '#4472C4',
+    red:    '#C0504D',
+    green:  '#548235',
+    amber:  '#BF8F00',
+    purple: '#7B57A0',
+    grey:   '#A5A5A5',
+    dark:   '#44546A',
+    greenText: '#3B6E1E',
+    redText:   '#A63D3A',
+  };
+
   // ---------------------------------------------------------------------------
   // Rate sensitivity bar chart
   // ---------------------------------------------------------------------------
   function renderRateSensitivity(canvasId, data) {
     const colors = data.map((d) =>
-      d.isCurrentRate ? '#3b82f6' : d.isStressTest ? '#ef4444' : '#94a3b8'
+      d.isCurrentRate ? C.blue : d.isStressTest ? C.red : C.grey
     );
     return getOrCreate(canvasId, {
       type: 'bar',
@@ -51,10 +64,10 @@ window.Charts = (function () {
                 type: 'line',
                 yMin: data.find((d) => d.isStressTest)?.monthlyPayment,
                 yMax: data.find((d) => d.isStressTest)?.monthlyPayment,
-                borderColor: '#ef4444',
+                borderColor: C.red,
                 borderWidth: 2,
                 borderDash: [6, 4],
-                label: { content: 'Stresstest', display: true, position: 'start', backgroundColor: '#ef4444' },
+                label: { content: 'Stresstest', display: true, position: 'start', backgroundColor: C.red },
               },
             },
           },
@@ -81,12 +94,12 @@ window.Charts = (function () {
           {
             label: 'Avdrag',
             data: schedule.map((y) => y.principal),
-            backgroundColor: '#3b82f6',
+            backgroundColor: C.blue,
           },
           {
             label: 'Renter',
             data: schedule.map((y) => y.interest),
-            backgroundColor: '#ef4444',
+            backgroundColor: C.red,
           },
         ],
       },
@@ -123,7 +136,7 @@ window.Charts = (function () {
           {
             label: 'Prisindeks Oslo (2015=100)',
             data: historyData.map((d) => d.index),
-            borderColor: '#3b82f6',
+            borderColor: C.blue,
             backgroundColor: 'rgba(59,130,246,0.15)',
             fill: true,
             tension: 0.3,
@@ -158,9 +171,7 @@ window.Charts = (function () {
     const hasStudentLoan = (data.studentLoan || 0) > 0;
 
     const steps = [
-      { label: 'Brutto', total: true, value: data.grossIncome },
-      { label: 'Skatt', total: false, value: -data.tax },
-      { label: 'Netto', total: true, value: data.netIncome },
+      { label: 'Netto lønn', total: true, value: data.netIncome },
       { label: 'Bolig', total: false, value: -data.housingCosts },
       ...(hasStudentLoan ? [{ label: 'Studielån', total: false, value: -data.studentLoan }] : []),
       { label: 'Leie-inn', total: false, value: data.rentalIncome || 0 },
@@ -177,14 +188,14 @@ window.Charts = (function () {
     steps.forEach((s) => {
       if (s.total) {
         bars.push([Math.min(0, s.value), Math.max(0, s.value)]);
-        colors.push(s.label === 'Til overs' ? (s.value >= 0 ? '#10b981' : '#ef4444') : '#3b82f6');
+        colors.push(s.label === 'Til overs' ? (s.value >= 0 ? C.green : C.red) : C.blue);
         amounts.push(s.value);
         cumulative = s.value;
       } else {
         const from = cumulative;
         const to = cumulative + s.value;
         bars.push([Math.min(from, to), Math.max(from, to)]);
-        colors.push(s.label === 'Leie-inn' ? '#10b981' : s.label === 'Studielån' ? '#f59e0b' : s.value < 0 ? '#ef4444' : '#10b981');
+        colors.push(s.label === 'Leie-inn' ? C.green : s.label === 'Studielån' ? C.amber : s.value < 0 ? C.red : C.green);
         amounts.push(s.value);
         cumulative = to;
       }
@@ -228,7 +239,7 @@ window.Charts = (function () {
           const amount = amounts[i];
           const text = s.total ? NOK(Math.abs(amount)) : `${amount >= 0 ? '+' : '−'}${NOK(Math.abs(amount))}`;
           ctx.font = s.total ? '600 11px system-ui, sans-serif' : '600 10px system-ui, sans-serif';
-          ctx.fillStyle = s.total ? '#1e293b' : (amount >= 0 ? '#059669' : '#dc2626');
+          ctx.fillStyle = s.total ? C.dark : (amount >= 0 ? C.greenText : C.redText);
           if (amount >= 0) {
             ctx.textBaseline = 'bottom';
             ctx.fillText(text, el.x, yScale.getPixelForValue(hi) - 4);
@@ -282,7 +293,7 @@ window.Charts = (function () {
     const total = parts.saleEquity + parts.savings + parts.loan;
     const labels = ['Fri EK fra salg', 'Sparepenger', 'Lån'];
     const values = [parts.saleEquity, parts.savings, parts.loan];
-    const colors = ['#3b82f6', '#8b5cf6', '#64748b'];
+    const colors = [C.blue, C.purple, C.dark];
     return getOrCreate(canvasId, {
       type: 'doughnut',
       data: {
@@ -323,23 +334,23 @@ window.Charts = (function () {
     const annotations = {
       zeroLine: {
         type: 'line', yMin: 0, yMax: 0,
-        borderColor: '#94a3b8', borderWidth: 1,
+        borderColor: C.grey, borderWidth: 1,
       },
       currentLine: {
         type: 'line', xMin: d.currentRate, xMax: d.currentRate,
-        borderColor: '#3b82f6', borderWidth: 2,
+        borderColor: C.blue, borderWidth: 2,
         label: {
           display: true, content: `Dagens rente ${comma2(d.currentRate)} %`,
-          position: 'end', backgroundColor: '#3b82f6', color: '#fff',
+          position: 'end', backgroundColor: C.blue, color: '#fff',
           font: { size: 10 }, padding: 4,
         },
       },
       stressLine: {
         type: 'line', xMin: d.stressRate, xMax: d.stressRate,
-        borderColor: '#ef4444', borderWidth: 2, borderDash: [6, 4],
+        borderColor: C.red, borderWidth: 2, borderDash: [6, 4],
         label: {
           display: true, content: `3 pp-stresstest ${comma1(d.stressRate)} %`,
-          position: 'start', backgroundColor: '#ef4444', color: '#fff',
+          position: 'start', backgroundColor: C.red, color: '#fff',
           font: { size: 10 }, padding: 4,
         },
       },
@@ -347,10 +358,10 @@ window.Charts = (function () {
     if (d.breakEvenRate != null) {
       annotations.breakEvenLine = {
         type: 'line', xMin: d.breakEvenRate, xMax: d.breakEvenRate,
-        borderColor: '#f59e0b', borderWidth: 2,
+        borderColor: C.amber, borderWidth: 2,
         label: {
           display: true, content: `Tåleevne ${comma2(d.breakEvenRate)} %`,
-          position: 'center', backgroundColor: '#f59e0b', color: '#fff',
+          position: 'center', backgroundColor: C.amber, color: '#fff',
           font: { size: 10 }, padding: 4,
         },
       };
@@ -363,7 +374,7 @@ window.Charts = (function () {
           {
             label: 'Likviditetsoverskudd',
             data: linePoints,
-            borderColor: '#10b981',
+            borderColor: C.green,
             borderWidth: 2,
             pointRadius: 0,
             tension: 0.1,
@@ -373,14 +384,14 @@ window.Charts = (function () {
               below: 'rgba(239,68,68,0.12)',
             },
             segment: {
-              borderColor: (c) => (c.p0.parsed.y < 0 || c.p1.parsed.y < 0 ? '#ef4444' : '#10b981'),
+              borderColor: (c) => (c.p0.parsed.y < 0 || c.p1.parsed.y < 0 ? C.red : C.green),
             },
           },
           {
             type: 'scatter',
             label: 'Dagens rente',
             data: [{ x: d.currentRate, y: d.currentSurplus }],
-            backgroundColor: '#3b82f6',
+            backgroundColor: C.blue,
             pointRadius: 5,
             pointHoverRadius: 7,
           },
@@ -388,7 +399,7 @@ window.Charts = (function () {
             type: 'scatter',
             label: '3 pp-stresstest',
             data: [{ x: d.stressRate, y: d.stressSurplus }],
-            backgroundColor: '#ef4444',
+            backgroundColor: C.red,
             pointRadius: 5,
             pointHoverRadius: 7,
           },
