@@ -476,7 +476,7 @@
       <tr><td>+ Dokumentavgift (2,5%)</td><td class="number">kr ${NOK(tx.buyingCosts.dokumentavgift)}</td></tr>
       <tr><td>+ Tinglysning</td><td class="number">kr ${NOK(tx.buyingCosts.tinglysning)}</td></tr>
       <tr><td>+ Boligkjøperforsikring</td><td class="number">kr ${NOK(tx.buyingCosts.boligkjoperforsikring)}</td></tr>
-      <tr class="highlight"><td><strong>= Totalt kjøpsbehov</strong></td><td class="number"><strong>kr ${NOK(eq.totalPurchaseCost)}</strong></td></tr>
+      <tr class="highlight"><td><strong>= Totalpris</strong></td><td class="number"><strong>kr ${NOK(eq.totalPurchaseCost)}</strong></td></tr>
     `);
 
     const total = boligPortion + eq.savingsUsed + eq.loanNeeded;
@@ -485,7 +485,7 @@
       <tr><td>Fri EK fra salg av leilighet</td><td class="number">kr ${NOK(boligPortion)}</td><td class="number">${pct(boligPortion)}</td></tr>
       <tr><td>Sparepenger/fond/aksjer</td><td class="number">kr ${NOK(eq.savingsUsed)}</td><td class="number">${pct(eq.savingsUsed)}</td></tr>
       <tr><td>Lån (ønsket)</td><td class="number">kr ${NOK(eq.loanNeeded)}</td><td class="number">${pct(eq.loanNeeded)}</td></tr>
-      <tr class="highlight"><td><strong>= Totalt kjøpsbehov</strong></td><td class="number"><strong>kr ${NOK(total)}</strong></td><td></td></tr>
+      <tr class="highlight"><td><strong>= Totalpris</strong></td><td class="number"><strong>kr ${NOK(total)}</strong></td><td></td></tr>
     `);
 
     Charts.renderFinancingBreakdown('chart-financing', {
@@ -496,14 +496,20 @@
   }
 
   function renderDebtRatio(eq) {
+    const annualRental = state.monthlyRentalIncome * 12;
+    const rentalWeighted = annualRental * state.rentalIncomeWeight;
+    const weightPct = Math.round(state.rentalIncomeWeight * 100);
     setHtml('detail-debt-ratio', `
+      <tr><td>Brutto lønnsinntekt</td><td class="number">kr ${NOK(state.grossIncome)}</td></tr>
+      ${annualRental > 0 ? `<tr><td>+ Leieinntekt (${weightPct} % vektet)</td><td class="number">kr ${NOK(rentalWeighted)}</td></tr>` : ''}
+      <tr class="highlight"><td><strong>= Beregnet inntekt</strong></td><td class="number"><strong>kr ${NOK(eq.effectiveIncome)}</strong></td></tr>
+      <tr><td>Maks total gjeld (5x inntekt)</td><td class="number">kr ${NOK(eq.maxTotalDebt5x)}</td></tr>
+      <tr><td colspan="2" style="padding: 2px"></td></tr>
       <tr><td>Ønsket lån</td><td class="number">kr ${NOK(eq.loanNeeded)}</td></tr>
       ${eq.otherDebt > 0 ? `<tr><td>+ Studielån</td><td class="number">kr ${NOK(eq.otherDebt)}</td></tr>` : ''}
       <tr class="highlight"><td><strong>= Total gjeld</strong></td><td class="number"><strong>kr ${NOK(eq.totalDebt)}</strong></td></tr>
-      <tr><td>Maks total gjeld (5x inntekt)</td><td class="number">kr ${NOK(eq.maxTotalDebt5x)}</td></tr>
-      ${eq.otherDebt > 0 ? `<tr><td>Maks boliglån (5x − studielån)</td><td class="number">kr ${NOK(eq.maxMortgage5x)}</td></tr>` : ''}
       <tr class="${eq.gap >= 0 ? 'feasible-row' : 'stress-row'}">
-        <td><strong>${eq.gap >= 0 ? 'Margin' : 'Gap (trenger unntak)'}</strong></td>
+        <td><strong>${eq.gap >= 0 ? 'Margin' : 'Over 5x-taket'}</strong></td>
         <td class="number"><strong>kr ${NOK(Math.abs(eq.gap))}</strong></td></tr>
     `);
   }
@@ -599,7 +605,7 @@
         + `Ved 3 pp-stresstesten (${c(r.stressRate, 1)} %) er det kr ${NOK(r.stressSurplus)}/mnd til overs.`;
     } else if (r.headroomPP >= 0) {
       const stressInside = r.stressRate <= r.breakEvenRate;
-      txt = `Tåleevne: renten kan stige til ${c(r.breakEvenRate, 2)} % — +${c(r.headroomPP, 2)} prosentpoeng fra dagens ${c(r.currentRate, 2)} % — `
+      txt = `Renten kan stige til ${c(r.breakEvenRate, 2)} % — +${c(r.headroomPP, 2)} prosentpoeng fra dagens ${c(r.currentRate, 2)} % — `
         + `før likviditetsoverskuddet blir null. 3 pp-stresstesten på ${c(r.stressRate, 1)} % ligger `
         + (stressInside
           ? `innenfor tåleevnen (kr ${NOK(r.stressSurplus)}/mnd til overs).`
@@ -636,8 +642,6 @@
     setText('dnb-savings', 'kr ' + NOK(bufferKept));
     setText('dnb-unntak', over5x > 0 ? 'kr ' + NOK(over5x) : 'ingenting — innenfor taket');
     setText('dnb-stress-rate', stressRateTxt);
-    setText('dnb-stress-rate-2', stressRateTxt);
-    setText('dnb-stress-remaining', 'kr ' + NOK(bankCtx.bankRemaining) + '/mnd');
     setText('dnb-income', 'kr ' + NOK(state.grossIncome));
     setTextAll(['dnb-savings-2', 'dnb-savings-3', 'dnb-savings-4', 'dnb-savings-5'], savingsTotalTxt);
     setTextAll(['dnb-car-value', 'dnb-car-value-2', 'dnb-car-value-3'], carValueTxt);
@@ -647,25 +651,29 @@
 
     // Mirror the canonical tables so they stay in sync with the sliders
     mirrorInto('oppgjor-sale', 'dnb-sale');
-    mirrorInto('oppgjor-purchase', 'dnb-purchase-table');
-    mirrorInto('oppgjor-financing', 'dnb-financing');
+
+    // Combined purchase + financing table
+    const tx = eq.transactionCosts;
+    const total = boligPortion + eq.savingsUsed + eq.loanNeeded;
+    const pct = (v) => total > 0 ? Math.round((v / total) * 100) + '%' : '—';
+    setHtml('dnb-purchase-financing', `
+      <tr><td>Kjøpesum hus</td><td class="number">kr ${NOK(state.housePurchasePrice)}</td></tr>
+      <tr><td>+ Dokumentavgift (2,5 %)</td><td class="number">kr ${NOK(tx.buyingCosts.dokumentavgift)}</td></tr>
+      <tr><td>+ Tinglysning</td><td class="number">kr ${NOK(tx.buyingCosts.tinglysning)}</td></tr>
+      <tr><td>+ Boligkjøperforsikring</td><td class="number">kr ${NOK(tx.buyingCosts.boligkjoperforsikring)}</td></tr>
+      <tr class="highlight"><td><strong>= Totalpris</strong></td><td class="number"><strong>kr ${NOK(eq.totalPurchaseCost)}</strong></td></tr>
+      <tr><td colspan="2" style="padding: 2px"></td></tr>
+      <tr><td>Fri EK fra salg av leilighet</td><td class="number">kr ${NOK(boligPortion)}</td></tr>
+      <tr><td>Sparepenger/fond/aksjer</td><td class="number">kr ${NOK(eq.savingsUsed)}</td></tr>
+      <tr><td>Nytt lån (ønsket)</td><td class="number">kr ${NOK(eq.loanNeeded)}</td></tr>
+      <tr class="highlight"><td><strong>= Totalpris</strong></td><td class="number"><strong>kr ${NOK(total)}</strong></td></tr>
+    `);
     mirrorInto('detail-debt-ratio', 'dnb-debt-ratio');
     mirrorInto('cashflow-details', 'dnb-cashflow');
-    mirrorInto('bank-perspective', 'dnb-bank-perspective');
-    mirrorInto('resilience-note', 'dnb-resilience-note');
-    const bv = document.getElementById('bank-verdict');
-    const bvTarget = document.getElementById('dnb-bank-verdict');
-    if (bv && bvTarget) {
-      bvTarget.textContent = bv.textContent;
-      bvTarget.className = bv.className;
-    }
+    const rnSrc = document.getElementById('resilience-note');
+    const rnTgt = document.getElementById('dnb-resilience-note');
+    if (rnSrc && rnTgt) rnTgt.textContent = rnSrc.textContent;
 
-    // Second chart instances (own canvas ids → own Chart objects in the registry)
-    Charts.renderFinancingBreakdown('dnb-chart-financing', {
-      saleEquity: boligPortion,
-      savings: eq.savingsUsed,
-      loan: eq.loanNeeded,
-    });
     Charts.renderCashFlow('dnb-chart-cashflow', cashFlowData);
     Charts.renderResilience('dnb-chart-resilience', resilience);
   }
