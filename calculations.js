@@ -96,11 +96,11 @@ window.Calc = (function () {
 
     const buyingCosts = {
       dokumentavgift: Math.round(purchasePrice * 0.025),
-      tinglysning: 1170, // skjøte + pantedokument
-      bankFee: 5000,
+      tinglysning: 1090, // skjøte 545 + pantedokument 545
+      boligkjoperforsikring: 17_900, // Tryg / Söderberg
       total: 0,
     };
-    buyingCosts.total = buyingCosts.dokumentavgift + buyingCosts.tinglysning + buyingCosts.bankFee;
+    buyingCosts.total = buyingCosts.dokumentavgift + buyingCosts.tinglysning + buyingCosts.boligkjoperforsikring;
 
     return {
       sellingCosts,
@@ -117,9 +117,17 @@ window.Calc = (function () {
 
     const equityFromSale = p.apartmentSalePrice - p.currentLoan - tx.sellingCosts.total;
     const savings = p.savings || 0; // sparepenger, BSU, aksjer, fond
-    const totalEquity = equityFromSale + savings;
+    const equityAvailable = equityFromSale + savings;
     const totalPurchaseCost = p.housePurchasePrice + tx.buyingCosts.total;
-    const loanNeeded = Math.max(0, totalPurchaseCost - totalEquity);
+    const minLoan = Math.max(0, totalPurchaseCost - equityAvailable); // loan if ALL equity is used
+
+    // desiredLoan lets you ask for more than the minimum (e.g. to avoid
+    // touching savings beyond the apartment-sale equity) — defaults to minLoan.
+    const loanNeeded = p.desiredLoan != null ? Math.round(p.desiredLoan) : minLoan;
+    const equityUsed = totalPurchaseCost - loanNeeded; // equity actually required at this loan level
+    const savingsUsed = Math.min(savings, Math.max(0, equityUsed - equityFromSale));
+    const savingsUnused = savings - savingsUsed;
+    const totalEquity = equityUsed;
 
     const requiredEquityPct = 0.10; // 10% since Dec 2024
     const requiredEquity = p.housePurchasePrice * requiredEquityPct;
@@ -142,6 +150,10 @@ window.Calc = (function () {
     return {
       equityFromSale: Math.round(equityFromSale),
       savings: Math.round(savings),
+      savingsUsed: Math.round(savingsUsed),
+      savingsUnused: Math.round(savingsUnused),
+      equityAvailable: Math.round(equityAvailable),
+      minLoan: Math.round(minLoan),
       totalEquity: Math.round(totalEquity),
       requiredEquity: Math.round(requiredEquity),
       equityMet,
@@ -157,139 +169,6 @@ window.Calc = (function () {
       debtToIncome: Math.round(debtToIncome * 100) / 100,
       totalPurchaseCost: Math.round(totalPurchaseCost),
       transactionCosts: tx,
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  // Upgrade comparison: Stay in apartment vs Buy house
-  //
-  // Key Norwegian tax rules modelled:
-  // 1. Rentefradrag: 22% tax deduction on all mortgage interest
-  // 2. Boligsalg: Tax-free if lived there 1 of last 2 years (primary residence)
-  // 3. Aksjegevinst: Taxed at 22% × oppjusteringsfaktor 1.72 = 37.84% effective
-  // 4. Giring/leverage: Property appreciation applies to full value, not just equity
-  // ---------------------------------------------------------------------------
-  const RENTEFRADRAG_RATE = 0.22;          // 22% tax deduction on interest
-  const FUND_GAIN_TAX_RATE = 0.22 * 1.72;  // 37.84% effective (aksjonærmodellen)
-
-  function upgradeComparison(p) {
-    const years = [];
-    const staySchedule = amortizationSchedule(p.currentLoan, p.currentRate, p.currentTermYears);
-    const buySchedule = amortizationSchedule(p.newLoan, p.newRate, p.newTermYears);
-
-    // Track cumulative interest for rentefradrag comparison
-    let stayCumulativeInterest = 0;
-    let buyCumulativeInterest = 0;
-    let stayCumulativeRentefradrag = 0;
-    let buyCumulativeRentefradrag = 0;
-
-    for (let y = 0; y <= p.projectionYears; y++) {
-      // === STAY scenario ===
-      const aptValue = Math.round(p.apartmentValue * Math.pow(1 + p.aptAppreciation / 100, y));
-      const aptLoan = y === 0 ? p.currentLoan : (staySchedule[y - 1] ? staySchedule[y - 1].remainingBalance : 0);
-      const stayYearData = y > 0 && y <= staySchedule.length ? staySchedule[y - 1] : null;
-      const stayInterest = stayYearData ? stayYearData.interest : 0;
-      const stayRentefradrag = Math.round(stayInterest * RENTEFRADRAG_RATE);
-      stayCumulativeInterest += stayInterest;
-      stayCumulativeRentefradrag += stayRentefradrag;
-
-      const stayMortgageMonthly = stayYearData ? Math.round(stayYearData.annualPayment / 12) : 0;
-      // Effective housing cost after rentefradrag
-      const stayHousingMonthly = stayMortgageMonthly + p.currentFellesutgifter + p.currentInsurance + p.currentOther - Math.round(stayRentefradrag / 12);
-
-      // Savings: grow with index fund returns (pre-tax)
-      const savingsGross = Math.round(p.savings * Math.pow(1 + p.indexFundReturn / 100, y));
-      const savingsGain = savingsGross - p.savings;
-      // After-tax value if sold: gains taxed at 37.84%
-      const savingsTaxOnGain = Math.max(0, Math.round(savingsGain * FUND_GAIN_TAX_RATE));
-      const savingsAfterTax = savingsGross - savingsTaxOnGain;
-
-      // Apartment sale is TAX FREE (primary residence, bodd > 1 av 2 år)
-      const aptGain = aptValue - p.apartmentValue; // unrealized, tax-free
-      const stayNetWorth = aptValue - aptLoan + savingsAfterTax;
-
-      // Leverage metrics for stay
-      const stayEquityInvested = p.apartmentValue - p.currentLoan; // initial equity
-      const stayReturnOnEquity = stayEquityInvested > 0 ? (aptGain / stayEquityInvested) : 0;
-
-      // === BUY scenario ===
-      const houseValue = Math.round(p.housePrice * Math.pow(1 + p.houseAppreciation / 100, y));
-      const houseLoan = y === 0 ? p.newLoan : (buySchedule[y - 1] ? buySchedule[y - 1].remainingBalance : 0);
-      const buyYearData = y > 0 && y <= buySchedule.length ? buySchedule[y - 1] : null;
-      const buyInterest = buyYearData ? buyYearData.interest : 0;
-      const buyRentefradrag = Math.round(buyInterest * RENTEFRADRAG_RATE);
-      buyCumulativeInterest += buyInterest;
-      buyCumulativeRentefradrag += buyRentefradrag;
-
-      const buyMortgageMonthly = buyYearData ? Math.round(buyYearData.annualPayment / 12) : 0;
-      const rentalMonthly = Math.round((p.monthlyRentalIncome || 0) * Math.pow(1 + (p.rentalGrowth || 2) / 100, y));
-      // Effective housing cost after rentefradrag
-      const buyHousingMonthly = buyMortgageMonthly + p.newKommunale + p.newInsurance + p.newMaintenance + p.newOther - rentalMonthly - Math.round(buyRentefradrag / 12);
-
-      // House sale is TAX FREE (primary residence)
-      const houseGain = houseValue - p.housePrice;
-      const buyNetWorth = houseValue - houseLoan; // no tax on sale
-
-      // Leverage: appreciation on full house value, but only equity invested
-      const buyEquityInvested = p.housePrice - p.newLoan; // initial equity put in
-      const buyReturnOnEquity = buyEquityInvested > 0 ? (houseGain / buyEquityInvested) : 0;
-      // Leverage ratio
-      const buyLeverage = buyEquityInvested > 0 ? (p.housePrice / buyEquityInvested) : 0;
-      const stayLeverage = stayEquityInvested > 0 ? (p.apartmentValue / stayEquityInvested) : 0;
-
-      // Monthly cost difference (positive = buying is more expensive)
-      const monthlyCostDiff = buyHousingMonthly - stayHousingMonthly;
-      const cumulativeExtraCost = y === 0 ? 0 : (years[y - 1].cumulativeExtraCost + monthlyCostDiff * 12);
-
-      years.push({
-        year: y,
-        // Stay
-        aptValue,
-        aptLoan,
-        savingsGross,
-        savingsTaxOnGain,
-        savingsAfterTax,
-        stayNetWorth,
-        stayMonthly: Math.round(stayHousingMonthly),
-        stayRentefradrag,
-        stayLeverage: Math.round(stayLeverage * 10) / 10,
-        stayReturnOnEquity: Math.round(stayReturnOnEquity * 1000) / 10,
-        // Buy
-        houseValue,
-        houseLoan,
-        buyNetWorth,
-        buyMonthly: Math.round(buyHousingMonthly),
-        buyRentefradrag,
-        buyLeverage: Math.round(buyLeverage * 10) / 10,
-        buyReturnOnEquity: Math.round(buyReturnOnEquity * 1000) / 10,
-        rentalIncome: rentalMonthly,
-        // Comparison
-        netWorthDiff: buyNetWorth - stayNetWorth,
-        monthlyCostDiff: Math.round(monthlyCostDiff),
-        cumulativeExtraCost: Math.round(cumulativeExtraCost),
-        // Cumulative tax benefits
-        stayCumRentefradrag: stayCumulativeRentefradrag,
-        buyCumRentefradrag: buyCumulativeRentefradrag,
-        rentefradragDiff: buyCumulativeRentefradrag - stayCumulativeRentefradrag,
-      });
-    }
-
-    const breakEvenYear = years.find((y) => y.year > 0 && y.netWorthDiff >= 0);
-
-    // Summary: total tax advantage of buying
-    const lastYear = years[years.length - 1];
-    const totalRentefradragAdvantage = lastYear.rentefradragDiff;
-    const totalFundTaxPaid = lastYear.savingsTaxOnGain;
-
-    return {
-      years,
-      breakEvenYear: breakEvenYear ? breakEvenYear.year : null,
-      summary: {
-        totalRentefradragAdvantage,
-        totalFundTaxPaid,
-        buyLeverage: years[0].buyLeverage,
-        stayLeverage: years[0].stayLeverage,
-      },
     };
   }
 
@@ -361,7 +240,6 @@ window.Calc = (function () {
       debtServiceRatioGross: annualCostCurrent / grossIncome,
       debtServiceRatioStress: annualCostStress / grossIncome,
       housingCostRatioNet: (annualCostCurrent / 12) / (effectiveNetIncome / 12),
-      passesStressTest: annualCostStress / grossIncome < 0.5,
     };
   }
 
@@ -389,101 +267,105 @@ window.Calc = (function () {
   }
 
   // ---------------------------------------------------------------------------
-  // Renovation timeline
+  // Rental income sensitivity — shows the loan holds up even without the
+  // expected rental income from the hybel, not just at the optimistic figure.
+  // Isolates ONE variable (rental income) at today's actual rate — deliberately
+  // NOT combined with the rate stress test, so the two risk scenarios don't blend.
   // ---------------------------------------------------------------------------
-  function renovationTimeline(p) {
-    const schedule = amortizationSchedule(p.initialLoan, p.interestRate, p.loanTermYears);
-    const years = [];
+  function rentalIncomeSensitivity(p) {
+    const expected = p.expectedMonthlyRental || 0;
+    const fractions = expected > 0 ? [0, 0.25, 0.5, 0.75, 1] : [0];
+    const levels = [...new Set(fractions.map((f) => Math.round((expected * f) / 500) * 500))].sort((a, b) => a - b);
 
-    for (let y = 0; y <= 15; y++) {
-      const propertyValue = Math.round(p.initialPropertyValue * Math.pow(1 + p.appreciationRate / 100, y));
-      const grossIncome = Math.round(p.grossIncome * Math.pow(1 + p.salaryGrowthRate / 100, y));
-      const rentalIncome = Math.round((p.annualRentalIncome || 0) * Math.pow(1 + p.salaryGrowthRate / 100, y));
-      const effectiveIncome = grossIncome + rentalIncome * (p.rentalIncomeWeight || 0.6);
-      const remainingLoan = y === 0 ? p.initialLoan : (schedule[y - 1] ? schedule[y - 1].remainingBalance : 0);
+    return levels.map((monthlyRental) => {
+      const annualRental = monthlyRental * 12;
+      const effectiveIncome = p.grossIncome + annualRental * (p.rentalIncomeWeight || 0);
+      const otherDebt = p.otherDebt || 0;
+      const totalDebt = p.loanNeeded + otherDebt;
+      const maxTotalDebt5x = effectiveIncome * 5;
+      const maxMortgage5x = maxTotalDebt5x - otherDebt;
+      const gap = maxMortgage5x - p.loanNeeded;
+      const incomeRuleMet = totalDebt <= maxTotalDebt5x;
 
-      const maxLoan5x = effectiveIncome * 5;
-      const availableEquity = propertyValue * 0.90 - remainingLoan; // 10% must stay as equity
-      const canBorrowByEquity = Math.max(0, availableEquity);
-      const canBorrowByIncome = Math.max(0, maxLoan5x - remainingLoan);
-      const maxAdditional = Math.min(canBorrowByEquity, canBorrowByIncome);
-      const renovationFeasible = maxAdditional >= p.renovationAmount;
+      const housingCost = p.monthlyPayment + p.fixedHousingCosts - monthlyRental;
+      const bankRemaining = p.netIncomeMonthly - housingCost - (p.studentLoanMonthly || 0) - p.sifoTotal - p.electricity;
 
-      years.push({
-        year: y,
-        propertyValue,
-        remainingLoan,
-        grossIncome,
-        rentalIncome,
-        effectiveIncome: Math.round(effectiveIncome),
-        maxLoan5x: Math.round(maxLoan5x),
-        canBorrowByEquity: Math.round(canBorrowByEquity),
-        canBorrowByIncome: Math.round(canBorrowByIncome),
-        maxAdditional: Math.round(maxAdditional),
-        renovationFeasible,
-      });
-    }
-
-    const feasibleYear = years.find((y) => y.renovationFeasible);
-    return { years, feasibleYear: feasibleYear ? feasibleYear.year : null };
+      return {
+        monthlyRental,
+        isExpected: monthlyRental === expected,
+        gap: Math.round(gap),
+        incomeRuleMet,
+        bankRemaining: Math.round(bankRemaining),
+        passes: bankRemaining >= 0, // liquidity at this rental level — the question this analysis answers
+      };
+    });
   }
 
   // ---------------------------------------------------------------------------
-  // Net worth trajectory
+  // Resilience curve ("tåleevne") — bank/SIFO liquidity surplus as a continuous
+  // function of the mortgage rate. The 3pp stress test is just one x-value on
+  // this curve; the break-even rate (where the surplus hits zero) is how much
+  // rate increase the household can actually absorb.
+  //   surplus(r) = netIncome − annuity(loan, r) − studielån − SIFO − strøm
+  //                − faste boutgifter + leieinntekt
   // ---------------------------------------------------------------------------
-  function netWorthTrajectory(p) {
-    const schedule = amortizationSchedule(p.loan, p.interestRate, p.loanTermYears);
-    const years = [];
+  function resilienceCurve(p) {
+    const currentRate = p.currentRate;
+    const stressRate = Math.max(currentRate + 3, 7);
 
-    for (let y = 0; y <= p.projectionYears; y++) {
-      const propertyValue = Math.round(p.propertyValue * Math.pow(1 + p.appreciationRate / 100, y));
-      const remainingLoan = y === 0 ? p.loan : (schedule[y - 1] ? schedule[y - 1].remainingBalance : 0);
-      const netWorthProperty = propertyValue - remainingLoan;
+    const fixedOutflow = (p.studentLoanMonthly || 0) + p.sifoMonthly + p.electricity
+      + p.fixedHousingCosts - (p.monthlyRentalIncome || 0);
+    const surplusAt = (rate) =>
+      Math.round(p.netIncomeMonthly - annuity(p.loanNeeded, rate, p.termYears).monthly - fixedOutflow);
 
-      // Alternative: invest the equity in index funds
-      const investedEquity = p.initialEquity;
-      const investmentValue = Math.round(investedEquity * Math.pow(1 + p.indexFundReturn / 100, y));
+    const minRate = 2;
+    const maxRate = Math.max(Math.ceil(stressRate + 1), Math.ceil(currentRate + 5), 12);
+    const step = 0.25;
 
-      years.push({
-        year: y,
-        propertyValue,
-        remainingLoan,
-        netWorthProperty,
-        investmentValue,
-      });
+    const points = [];
+    for (let r = minRate; r <= maxRate + 1e-9; r += step) {
+      const rate = Math.round(r * 100) / 100;
+      points.push({ rate, surplus: surplusAt(rate) });
     }
-    return years;
-  }
 
-  // ---------------------------------------------------------------------------
-  // Monthly cost comparison
-  // ---------------------------------------------------------------------------
-  function monthlyCostComparison(p) {
-    const currentMortgage = annuity(p.currentLoan, p.currentRate, p.currentTermYears).monthly;
-    const newMortgage = annuity(p.newLoan, p.newRate, p.newTermYears).monthly;
-
-    const currentTotal = currentMortgage + p.currentFellesutgifter + p.currentInsurance + p.currentOther;
-    const rentalOffset = Math.round((p.monthlyRentalIncome || 0));
-    const newTotal = newMortgage + p.newKommunale + p.newInsurance + p.newMaintenance + p.newOther - rentalOffset;
+    // Break-even rate — linear interpolation across the first zero crossing.
+    let breakEvenRate = null;
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1];
+      const b = points[i];
+      if ((a.surplus >= 0 && b.surplus < 0) || (a.surplus < 0 && b.surplus >= 0)) {
+        const t = a.surplus / (a.surplus - b.surplus);
+        breakEvenRate = Math.round((a.rate + t * (b.rate - a.rate)) * 100) / 100;
+        break;
+      }
+    }
 
     return {
-      current: {
-        mortgage: currentMortgage,
-        fellesutgifter: p.currentFellesutgifter,
-        insurance: p.currentInsurance,
-        other: p.currentOther,
-        total: currentTotal,
-      },
-      new: {
-        mortgage: newMortgage,
-        kommunale: p.newKommunale,
-        insurance: p.newInsurance,
-        maintenance: p.newMaintenance,
-        other: p.newOther,
-        rentalIncome: rentalOffset,
-        total: newTotal,
-      },
-      difference: newTotal - currentTotal,
+      points,
+      currentRate: Math.round(currentRate * 100) / 100,
+      stressRate: Math.round(stressRate * 100) / 100,
+      breakEvenRate,
+      currentSurplus: surplusAt(currentRate),
+      stressSurplus: surplusAt(stressRate),
+      headroomPP: breakEvenRate != null ? Math.round((breakEvenRate - currentRate) * 100) / 100 : null,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Monthly housing cost (new home)
+  // ---------------------------------------------------------------------------
+  function monthlyHousingCost(p) {
+    const mortgage = annuity(p.loan, p.rate, p.termYears).monthly;
+    const rentalIncome = Math.round(p.monthlyRentalIncome || 0);
+    const total = mortgage + p.kommunale + p.insurance + p.maintenance + p.other - rentalIncome;
+    return {
+      mortgage,
+      kommunale: p.kommunale,
+      insurance: p.insurance,
+      maintenance: p.maintenance,
+      other: p.other,
+      rentalIncome,
+      total, // net of rental income
     };
   }
 
@@ -500,9 +382,8 @@ window.Calc = (function () {
     amortizationSchedule,
     calculateAffordability,
     rateSensitivity,
-    renovationTimeline,
-    netWorthTrajectory,
-    monthlyCostComparison,
-    upgradeComparison,
+    rentalIncomeSensitivity,
+    resilienceCurve,
+    monthlyHousingCost,
   };
 })();

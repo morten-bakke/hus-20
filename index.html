@@ -15,106 +15,34 @@
   <header class="bg-white border-b border-slate-200 sticky top-0 z-50 no-print">
     <div class="max-w-7xl mx-auto px-4 py-3">
       <h1 class="text-xl font-bold text-slate-800">Boligkalkulator Oslo</h1>
-      <p class="text-xs text-slate-500">Basert på utlånsforskriften 2026 — 10% egenkapital, 5x inntekt, stresstest +3pp/min 7%</p>
+      <p class="text-xs text-slate-500">Underlag for lånesamtale med banken — basert på faktisk oppgjør. Utlånsforskriften 2026: 10% egenkapital, 5x inntekt, stresstest på den høyeste av 7% og rente +3 prosentpoeng</p>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
     <!-- ================================================================== -->
-    <!-- INPUT PANEL -->
+    <!-- FACTS PANEL -->
     <!-- ================================================================== -->
     <section class="card no-print">
-      <h2 class="text-sm font-bold text-slate-700 mb-4">Forutsetninger</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+      <h2 class="text-sm font-bold text-slate-700 mb-1">Fakta i saken</h2>
+      <p class="text-xs text-slate-400 mb-4">Tall fra kjøpekontrakt og sluttoppgjør — ikke til diskusjon.</p>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-3" id="facts-grid"></div>
+    </section>
 
-        <!-- Column 1: Kjøp/Salg -->
-        <div class="space-y-3">
-          <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Kjøp & Salg</h3>
-          <div class="input-group">
-            <label>Salgssum leilighet</label>
-            <div class="input-row">
-              <input type="range" data-bind="apartmentSalePrice" data-mult="1000000" min="8" max="14" step="0.1">
-              <span class="input-value" data-display="apartmentSalePrice"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Kjøpesum hus</label>
-            <div class="input-row">
-              <input type="range" data-bind="housePurchasePrice" data-mult="1000000" min="12" max="20" step="0.1">
-              <span class="input-value" data-display="housePurchasePrice"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Nåværende lån</label>
-            <div class="input-row">
-              <input type="range" data-bind="currentLoan" data-mult="1000000" min="5" max="12" step="0.1">
-              <span class="input-value" data-display="currentLoan"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Sparepenger / fond / aksjer <span class="info-tip" title="Oppsparte midler som kan brukes som egenkapital: banksparing, BSU, aksjer, fond osv.">?</span></label>
-            <div class="input-row">
-              <input type="range" data-bind="savings" data-mult="100000" min="0" max="30" step="0.5">
-              <span class="input-value" data-display="savings"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Studielån <span class="info-tip" title="Teller med i 5x gjeldsgrad og bankens betjeningsevne.">?</span></label>
-            <div class="input-row">
-              <input type="range" data-bind="studentLoan" data-mult="100000" min="0" max="20" step="0.5">
-              <span class="input-value" data-display="studentLoan"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Meglerprovisjoner (%)</label>
-            <div class="input-row">
-              <input type="range" data-bind="realtorPct" min="0.5" max="3" step="0.1">
-              <span class="input-value" data-display="realtorPct"></span>
-            </div>
-          </div>
-        </div>
+    <!-- ================================================================== -->
+    <!-- NEGOTIATION VARIABLES -->
+    <!-- ================================================================== -->
+    <section class="card no-print">
+      <h2 class="text-sm font-bold text-slate-700 mb-4">Forhandlingsvariabler & utleie</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
 
-        <!-- Column 2: Inntekt -->
         <div class="space-y-3">
-          <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Inntekt</h3>
-          <div class="input-group">
-            <label>Brutto husholdningsinntekt</label>
-            <div class="input-row">
-              <input type="range" data-bind="grossIncome" data-mult="100000" min="10" max="40" step="0.5">
-              <span class="input-value" data-display="grossIncome"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Inntektsfordeling</label>
-            <div class="input-row">
-              <input type="range" data-bind="incomeSplit" min="0.3" max="0.7" step="0.05">
-              <span class="input-value" data-display="incomeSplit"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Leieinntekt (mnd) <span class="info-tip" title="Inntekt fra utleie av del av bolig. Banken vekter typisk 60-80% av dette.">?</span></label>
-            <div class="input-row">
-              <input type="range" data-bind="monthlyRentalIncome" data-mult="1000" min="0" max="20" step="0.5">
-              <span class="input-value" data-display="monthlyRentalIncome"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Bankens vekting av leieinntekt</label>
-            <div class="input-row">
-              <input type="range" data-bind="rentalIncomeWeight" min="0" max="1" step="0.1">
-              <span class="input-value" data-display="rentalIncomeWeight"></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Column 3: Lån -->
-        <div class="space-y-3">
-          <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lånevilkår</h3>
+          <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lånevilkår (til forhandling)</h3>
           <div class="input-group">
             <label>Nominell rente (%)</label>
             <div class="input-row">
-              <input type="range" data-bind="interestRate" min="2" max="8" step="0.1">
+              <input type="range" data-bind="interestRate" min="2" max="8" step="0.05">
               <span class="input-value" data-display="interestRate"></span>
             </div>
           </div>
@@ -126,53 +54,39 @@
             </div>
           </div>
           <div class="input-group">
-            <label>Forventet lønnsvekst (%/år)</label>
+            <label>Ønsket lån <span class="info-tip" title="Hvor mye dere ber banken om. Standard er satt til minimum uten å røre sparepenger utover egenkapitalen fra boligsalget — dra sliderern for å se scenarioer med høyere lån.">?</span></label>
             <div class="input-row">
-              <input type="range" data-bind="salaryGrowth" min="0" max="8" step="0.5">
-              <span class="input-value" data-display="salaryGrowth"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Prisvekst hus (%/år)</label>
-            <div class="input-row">
-              <input type="range" data-bind="propertyAppreciation" min="-2" max="8" step="0.5">
-              <span class="input-value" data-display="propertyAppreciation"></span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Prisvekst leilighet (%/år) <span class="info-tip" title="Brukes i sammenligning: hva om du blir boende?">?</span></label>
-            <div class="input-row">
-              <input type="range" data-bind="apartmentAppreciation" min="-2" max="8" step="0.5">
-              <span class="input-value" data-display="apartmentAppreciation"></span>
+              <input type="range" data-bind="desiredLoan" data-mult="1" step="10000">
+              <span class="input-value" data-display="desiredLoan"></span>
             </div>
           </div>
         </div>
 
-        <!-- Column 4: Renovering & Investering -->
         <div class="space-y-3">
-          <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Renovering & Investering</h3>
+          <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Utleie (hybel)</h3>
           <div class="input-group">
-            <label>Renoveringsbudsjett</label>
+            <label>Forventet leieinntekt (mnd) <span class="info-tip" title="Forventet leieinntekt fra hybelen. Sensitivitetsanalysen under viser hva som skjer ved lavere inntekt.">?</span></label>
             <div class="input-row">
-              <input type="range" data-bind="renovationAmount" data-mult="1000000" min="1" max="10" step="0.5">
-              <span class="input-value" data-display="renovationAmount"></span>
+              <input type="range" data-bind="monthlyRentalIncome" data-mult="1000" min="0" max="20" step="0.5">
+              <span class="input-value" data-display="monthlyRentalIncome"></span>
             </div>
           </div>
           <div class="input-group">
-            <label>Avkastning indeksfond (%/år)</label>
+            <label>Bankens vekting av leieinntekt <span class="info-tip" title="Banken vekter typisk 60-80% av dokumentert leieinntekt i 5x-beregningen.">?</span></label>
             <div class="input-row">
-              <input type="range" data-bind="indexFundReturn" min="3" max="12" step="0.5">
-              <span class="input-value" data-display="indexFundReturn"></span>
+              <input type="range" data-bind="rentalIncomeWeight" min="0" max="1" step="0.1">
+              <span class="input-value" data-display="rentalIncomeWeight"></span>
             </div>
           </div>
           <div class="input-group">
-            <label>Din andel av bolig (utleie)</label>
+            <label>Egen bruk av bolig <span class="info-tip" title="Andel dere selv bruker. ≥50% gjør leieinntekten skattefri.">?</span></label>
             <div class="input-row">
               <input type="range" data-bind="ownerOccupiedShare" min="0.3" max="0.9" step="0.1">
               <span class="input-value" data-display="ownerOccupiedShare"></span>
             </div>
           </div>
         </div>
+
       </div>
     </section>
 
@@ -216,117 +130,247 @@
     <!-- TABS -->
     <!-- ================================================================== -->
     <nav class="flex gap-1 border-b border-slate-200 overflow-x-auto no-print">
-      <button class="tab-btn active" data-tab="tab-scenario">Scenario</button>
-      <button class="tab-btn" data-tab="tab-upgrade">Bli boende vs. kjøpe</button>
-      <button class="tab-btn" data-tab="tab-sensitivity">Rentesensitivitet</button>
-      <button class="tab-btn" data-tab="tab-renovation">Renovering</button>
-      <button class="tab-btn" data-tab="tab-costs">Kostnadssammenligning</button>
-      <button class="tab-btn" data-tab="tab-cashflow">Kontantstrøm</button>
-      <button class="tab-btn" data-tab="tab-networth">Investering</button>
+      <button class="tab-btn active" data-tab="tab-oppgjor">Oppgjør</button>
+      <button class="tab-btn" data-tab="tab-bankcase">Saken for banken</button>
+      <button class="tab-btn" data-tab="tab-dnb">E-post til DNB</button>
+      <button class="tab-btn" data-tab="tab-sensitivity">Rente & besparelse</button>
+      <button class="tab-btn" data-tab="tab-cashflow">Kontantstrøm (SIFO)</button>
       <button class="tab-btn" data-tab="tab-market">Markedsdata</button>
     </nav>
 
-    <!-- TAB: Scenario -->
-    <div id="tab-scenario" class="tab-content active space-y-4">
+    <!-- TAB: Oppgjør -->
+    <div id="tab-oppgjor" class="tab-content active space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="card">
-          <h3 class="text-sm font-bold text-slate-700 mb-3">Transaksjonsoppstilling</h3>
+          <h3 class="text-sm font-bold text-slate-700 mb-1">Salg av leilighet</h3>
+          <p class="text-xs text-slate-400 mb-3">Hva salget faktisk frigjør i egenkapital.</p>
           <table class="data-table">
-            <tbody id="detail-summary"></tbody>
+            <tbody id="oppgjor-sale"></tbody>
           </table>
         </div>
-        <div class="space-y-4">
-          <div class="card">
-            <h3 class="text-sm font-bold text-slate-700 mb-3">Salgskostnader</h3>
+        <div class="card">
+          <h3 class="text-sm font-bold text-slate-700 mb-1">Kjøp av hus</h3>
+          <p class="text-xs text-slate-400 mb-3">Total kjøpesum, inkl. omkostninger.</p>
+          <table class="data-table">
+            <tbody id="oppgjor-purchase"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-1">Finansiering — hvor kommer egenkapitalen fra?</h3>
+        <p class="text-xs text-slate-400 mb-3">Hvordan totalbehovet dekkes: fri EK fra salget, sparepenger, og lån.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+          <div class="chart-container" style="height: 220px"><canvas id="chart-financing"></canvas></div>
+          <div>
             <table class="data-table">
-              <tbody id="detail-selling-costs"></tbody>
+              <tbody id="oppgjor-financing"></tbody>
             </table>
-          </div>
-          <div class="card">
-            <h3 class="text-sm font-bold text-slate-700 mb-3">Kjøpskostnader</h3>
-            <table class="data-table">
-              <tbody id="detail-buying-costs"></tbody>
-            </table>
-          </div>
-          <div class="card bg-blue-50 border border-blue-200">
-            <h3 class="text-sm font-bold text-blue-800 mb-2">Om 5x-regelen og unntak</h3>
-            <p class="text-xs text-blue-700">
-              Banken kan maksimalt låne deg 5 ganger brutto årsinntekt. I Oslo kan banken gjøre unntak for inntil 8% av utlånsvolumet per kvartal.
-              Med leieinntekt fra utleiedel kan banken vekte 60-80% av dokumentert leieinntekt i beregningen.
-              Bruk sliderne ovenfor for å se hvordan endringer påvirker regnestykket.
-            </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- TAB: Upgrade Comparison -->
-    <div id="tab-upgrade" class="tab-content space-y-4">
+    <!-- TAB: Saken for banken -->
+    <div id="tab-bankcase" class="tab-content space-y-4">
       <div class="card">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-slate-700">Lønner det seg å oppgradere?</h3>
-          <span class="px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800" id="upgrade-verdict">—</span>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold text-slate-700">Vurdering</h3>
+          <span class="px-3 py-1 rounded-full text-sm font-semibold" id="bankcase-verdict">—</span>
         </div>
-        <p class="text-xs text-slate-500 mb-4">
-          Sammenligner to scenarioer over 20 år med norsk skattebehandling:
-          <strong>A) Bli boende</strong> i leiligheten + sparepenger i fond (gevinst skattlagt 37,84%) vs.
-          <strong>B) Kjøpe hus</strong> med giring, rentefradrag (22%), skattefritt boligsalg, og ev. leieinntekt.
-        </p>
-        <div class="chart-container" style="height: 350px"><canvas id="chart-upgrade"></canvas></div>
-      </div>
-
-      <!-- Leverage & Tax Summary -->
-      <div class="card" id="upgrade-leverage"></div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card" id="upgrade-5yr"></div>
-        <div class="card" id="upgrade-10yr"></div>
-        <div class="card" id="upgrade-20yr"></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3" id="bankcase-criteria"></div>
       </div>
 
       <div class="card">
-        <h3 class="text-sm font-bold text-slate-700 mb-3">Detaljert sammenligning (etter skatt)</h3>
-        <div class="overflow-x-auto">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th rowspan="2">År</th>
-                <th colspan="3" class="text-center" style="border-bottom:1px solid #e2e8f0">Bli boende</th>
-                <th colspan="2" class="text-center" style="border-bottom:1px solid #e2e8f0">Kjøpe hus</th>
-                <th rowspan="2">Forskjell</th>
-                <th rowspan="2">Ekstra rentefradrag</th>
-              </tr>
-              <tr>
-                <th>Leilighet</th>
-                <th>Fond (etter skatt)</th>
-                <th>Netto formue</th>
-                <th>Hus</th>
-                <th>Netto formue</th>
-              </tr>
-            </thead>
-            <tbody id="upgrade-table-body"></tbody>
-          </table>
-        </div>
+        <h3 class="text-sm font-bold text-slate-700 mb-3">Gjeldsgrad (5x-regel)</h3>
+        <table class="data-table">
+          <tbody id="detail-debt-ratio"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-2">Utleieinntekt — sensitivitet</h3>
+        <p class="text-xs text-slate-400 mb-1">Ved dagens rente — ikke stresstestet. Isolerer effekten av leieinntekt alene, uten å blande inn rentescenarioet.</p>
+        <p class="text-xs text-slate-500 mb-3" id="rental-sensitivity-note"></p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Leieinntekt</th>
+              <th>Likviditetsoverskudd (dagens rente)</th>
+              <th>Margin 5x-regel</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="rental-sensitivity-body"></tbody>
+        </table>
       </div>
 
       <div class="card bg-blue-50 border border-blue-200">
-        <h3 class="text-sm font-bold text-blue-800 mb-2">Slik leser du denne analysen</h3>
-        <p class="text-xs text-blue-700 space-y-1">
-          <strong>Giring (leverage):</strong> Med 20% egenkapital har du 5x giring — en prisvekst på 3,5% gir 17,5% avkastning på egenkapitalen.
-          Fond gir 1:1 eksponering. Giring forsterker både gevinst og tap.<br>
-          <strong>Rentefradrag:</strong> Du får 22% skattefradrag på alle rentekostnader. Med høyere lån ved huskjøp gir dette
-          et betydelig ekstra skattefradrag sammenlignet med å beholde det lavere lånet på leiligheten.<br>
-          <strong>Skatt på gevinst:</strong> Boligsalg er skattefritt når du har bodd der 1 av siste 2 år (gevinstfritt).
-          Gevinst på aksjer/fond beskattes med effektiv sats 37,84% (22% × oppjusteringsfaktor 1,72).<br>
-          <strong>«Bli boende»</strong>: Leiligheten stiger i verdi (skattefritt), lån betales ned, sparepenger vokser i fond (gevinst skattlegges ved salg).<br>
-          <strong>«Kjøpe hus»</strong>: Huset stiger i verdi (skattefritt, giret eksponering), nytt lån betales ned, høyere rentefradrag, ev. leieinntekt.<br>
-          Merk: Analysen viser kun formuesutvikling. Livskvalitet, plass, beliggenhet osv. er ikke kvantifisert.
+        <h3 class="text-sm font-bold text-blue-800 mb-2">Om 5x-regelen og unntak</h3>
+        <p class="text-xs text-blue-700">
+          Banken kan maksimalt låne deg 5 ganger brutto årsinntekt. I Oslo kan banken gjøre unntak for inntil 8% av utlånsvolumet per kvartal.
+          Med leieinntekt fra utleiedel kan banken vekte 60-80% av dokumentert leieinntekt i beregningen.
+          Bruk sliderne i «Forhandlingsvariabler & utleie» for å se hvordan rente eller leieinntekt påvirker regnestykket.
         </p>
       </div>
     </div>
 
-    <!-- TAB: Sensitivity -->
+    <!-- TAB: E-post til DNB -->
+    <div id="tab-dnb" class="tab-content space-y-4">
+
+      <div class="card no-print bg-blue-50 border border-blue-200">
+        <p class="text-xs text-blue-800">
+          <strong>Utkast</strong> — redigér fritt før sending. Beløp i tabeller og grafer under oppdateres live fra
+          «Forhandlingsvariabler &amp; utleie» øverst (rente, lån, leieinntekt). Dra «Nominell rente» ned for å modellere
+          et bedre DNB-tilbud; «BN Bank»-tallene (11,5 mill., 4,99 %) står fast som referanse. Skriv ut med Ctrl+P for
+          PDF-vedlegg — da kommer kun dette fanebladet med.
+        </p>
+      </div>
+
+      <div class="card">
+        <table class="data-table mb-4">
+          <tbody>
+            <tr><td>Til</td><td>DNB — [kunderådgiver]</td></tr>
+            <tr><td>Fra</td><td>Morten Bakke — 977 80 679 — mortenbakke@outlook.com</td></tr>
+            <tr><td>Emne</td><td>Forespørsel om lånetilbud — boliglån <span id="dnb-loan-subject">—</span> (bolig kjøpt, overtakelse 1. oktober 2026)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="text-sm text-slate-700 leading-relaxed space-y-4">
+          <p>Hei,</p>
+
+          <p>
+            Jeg og min kone har kjøpt enebolig i <strong>Måltrostveien 27B</strong> til <strong><span id="dnb-purchase">—</span></strong>
+            (eks. omkostninger), med overtakelse <strong>1. oktober 2026</strong>. Kjøpet er finansiert med finansieringsbevis fra
+            <strong>BN Bank</strong>: lån på ca. <strong><span id="dnb-bn-loan">—</span></strong>, 4,99 % nominell rente, 30 års løpetid.
+          </p>
+
+          <p>
+            Situasjonen er nå vesentlig mer avklart enn da finansieringsbeviset ble gitt: vi har
+            <strong>solgt vår tidligere leilighet</strong> for <span id="dnb-sale-price">—</span>, med overtakelse samme dag
+            som huset — <strong>1. oktober 2026</strong>. Budrunde og gjennomføringsrisiko er dermed ute av bildet. Eneste
+            gjenværende usikkerhet er en eventuell kort forsinkelse i overføringen av oppgjøret fra meglers klientkonto,
+            som etter det vi forstår kan ta 4–5 dager i enkelte tilfeller — et eventuelt behov for mellomfinansiering vil
+            i så fall være svært kortvarig og av kjent omfang, ikke knyttet til gjennomføringsrisiko ved selve handelen.
+          </p>
+
+          <p>
+            DNB er i dag vår lånegiver på leiligheten vi nå har solgt, og vi har i tillegg sparing (aksjer, fond og
+            høyrentekonto) og forsikringer hos dere. Vi ønsker å videreføre DNB som vår totalbank også for det nye
+            boliglånet, framfor å samle hele engasjementet et annet sted.
+          </p>
+
+          <p>
+            På dette grunnlaget ønsker vi et konkurransedyktig lånetilbud fra DNB. Konkret ber vi om:
+          </p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>økt lån til <strong><span id="dnb-loan">—</span></strong> (<span id="dnb-loan-increase">—</span> mer enn dagens),
+              slik at vi beholder oppsparte midler som likviditetsbuffer framfor å binde dem i boligen</li>
+            <li>en rente som minst matcher, helst forbedrer, dagens 4,99 %</li>
+            <li>at DNB fortsetter som vår totalbank for lån, sparing og forsikring — vi ønsker å samle engasjementet, ikke splitte det</li>
+          </ul>
+
+          <p>
+            Vedlagt: lønnsdokumentasjon (sum <span id="dnb-income">—</span>), salgsoppgave/oppgjørsoppstilling for
+            leiligheten, finansieringsbevis fra BN Bank, og oversikt over oppsparte midler
+            (<span id="dnb-savings-2">—</span>). I tillegg har vi en bil uten heftelser
+            (~<span id="dnb-car-value">—</span>) som ytterligere reserve, og ubenyttede kredittrammer som avvikles.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-1">1. Egenkapital og finansiering</h3>
+        <p class="text-sm text-slate-700 leading-relaxed mb-3">
+          Egenkapitalen som går inn i kjøpet utgjør <strong><span id="dnb-ek-amount">—</span></strong>
+          (<span id="dnb-ek-pct">—</span> av kjøpesummen) — godt over forskriftens krav på 10 %. Etter salget av leiligheten
+          er dette bekreftede kontanter, ikke en verdivurdering. Belåningsgrad på pantet blir
+          <strong><span id="dnb-ltv">—</span></strong>, innenfor forskriftens 90 %-grense. Vi velger å ikke tømme sparekontoen inn i
+          boligen; <span id="dnb-savings">—</span> i oppsparte midler (aksjer, fond og høyrentekonto) pluss gjeldfri bil
+          (~<span id="dnb-car-value-3">—</span>) står som buffer for uforutsette kostnader og oppussing. Ved behov kan vi
+          også trekke ytterligere på disse sparemidlene — samlet <span id="dnb-savings-3">—</span> — som ekstra
+          likviditetsreserve, noe som reduserer risikoen i søknaden ytterligere.
+        </p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          <div>
+            <h4 class="text-xs font-semibold text-slate-500 mb-1">Salg av leilighet</h4>
+            <table class="data-table"><tbody id="dnb-sale"></tbody></table>
+          </div>
+          <div>
+            <h4 class="text-xs font-semibold text-slate-500 mb-1">Kjøp av hus</h4>
+            <table class="data-table"><tbody id="dnb-purchase-table"></tbody></table>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+          <div class="chart-container" style="height: 220px"><canvas id="dnb-chart-financing"></canvas></div>
+          <table class="data-table"><tbody id="dnb-financing"></tbody></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-1">2. Gjeldsgrad (5x inntekt)</h3>
+        <table class="data-table mb-3"><tbody id="dnb-debt-ratio"></tbody></table>
+        <p class="text-sm text-slate-700 leading-relaxed">
+          Med ønsket lån pluss studielån ligger samlet gjeld <strong><span id="dnb-unntak">—</span></strong> over 5x-taket
+          (avhengig av hvordan dere vekter antatt leieinntekt). Vi ber om at lånet innvilges innenfor bankens kvote for
+          fleksibilitet etter utlånsforskriften. Vi mener unntaket er godt underbygget:
+        </p>
+        <ul class="text-sm text-slate-700 leading-relaxed list-disc pl-5 mt-2 space-y-1">
+          <li>kjøp gjennomført og leilighet solgt med samme overtakelsesdato — ingen gjennomføringsrisiko, og mellomfinansieringsbehovet er uansett begrenset til noen få dagers forsinkelse i oppgjøret</li>
+          <li>solid, bekreftet egenkapital og belåningsgrad innenfor forskriftens 90 %-grense</li>
+          <li>positiv betjeningsevne med margin også ved stresstest på <span id="dnb-stress-rate">—</span> (se punkt 3)</li>
+          <li>forventet lønnsvekst ved årets lønnsoppgjør bringer oss innenfor 5x-taket i løpet av kort tid</li>
+          <li>jevn og disiplinert sparing over tid; likviditetsreserver utover egenkapitalen (gjeldfri bil ~<span id="dnb-car-value-2">—</span>, oppsparte midler <span id="dnb-savings-4">—</span> i aksjer/fond/høyrentekonto, kredittrammer avvikles)</li>
+          <li>eksisterende, langvarig kundeforhold hos DNB (lån, sparing og forsikring) — lav risiko for banken ved å beholde oss som totalkunde</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-1">3. Kontantstrøm og betjeningsevne</h3>
+        <p class="text-sm text-slate-700 leading-relaxed mb-3">
+          Ved <span id="dnb-current-rate">—</span> nominell rente og <span id="dnb-loan-term">—</span> års
+          nedbetalingstid. Leieinntekt på <span id="dnb-rental-income">—</span>/mnd er lagt inn, men er
+          <em>ikke</em> en forutsetning for positiv kontantstrøm.
+        </p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <table class="data-table"><tbody id="dnb-cashflow"></tbody></table>
+          <div class="chart-container"><canvas id="dnb-chart-cashflow"></canvas></div>
+        </div>
+        <h4 class="text-sm font-semibold text-slate-700 mt-5 mb-2">Stresstest — <span id="dnb-stress-rate-2">—</span> rente</h4>
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="px-3 py-1 rounded-full text-xs font-semibold" id="dnb-bank-verdict">—</span>
+          <span class="text-sm text-slate-700">Likviditetsoverskudd <strong><span id="dnb-stress-remaining">—</span></strong>
+            etter SIFO-budsjett, boutgifter og studielån.</span>
+        </div>
+        <div id="dnb-bank-perspective"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-1">4. Tåleevne</h3>
+        <p class="text-sm text-slate-700 leading-relaxed mb-2" id="dnb-resilience-note">—</p>
+        <div class="chart-container" style="height: 340px"><canvas id="dnb-chart-resilience"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-1">5. Sparing og økonomisk disiplin</h3>
+        <div class="text-sm text-slate-700 leading-relaxed space-y-4">
+          <p>
+            Vi har spart jevnt og målrettet over flere år (oppsparte midler <span id="dnb-savings-5">—</span>, i tillegg til BSU/fond).
+            Vi mener dette underbygger reell betjeningsevne utover det regnearket viser.
+          </p>
+          <p>
+            Vi håper dette gir et godt bilde av økonomien vår. Si gjerne fra om dere trenger ytterligere dokumentasjon —
+            jeg er tilgjengelig på 977 80 679.
+          </p>
+          <p>Med vennlig hilsen<br>Morten Bakke</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB: Rate & savings -->
     <div id="tab-sensitivity" class="tab-content space-y-4">
+      <div class="card bg-emerald-50 border border-emerald-200" id="rate-savings-callout"></div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="card">
           <h3 class="text-sm font-bold text-slate-700 mb-3">Månedlig kostnad ved ulike renter</h3>
@@ -354,98 +398,6 @@
       </div>
     </div>
 
-    <!-- TAB: Renovation -->
-    <div id="tab-renovation" class="tab-content space-y-4">
-      <div class="card">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-slate-700">Når kan du ta opp renoveringslån?</h3>
-          <span class="px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800" id="renovation-verdict">—</span>
-        </div>
-        <p class="text-xs text-slate-500 mb-4">
-          Simulerer år for år basert på prisvekst, lønnsvekst og nedbetaling.
-          Renovering er mulig når både egenkapital (10%-krav) og inntektsregel (5x) tillater det.
-        </p>
-        <div class="chart-container" style="height: 350px"><canvas id="chart-renovation"></canvas></div>
-      </div>
-      <div class="card">
-        <h3 class="text-sm font-bold text-slate-700 mb-3">Årsdetaljer</h3>
-        <div class="overflow-x-auto">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>År</th>
-                <th>Boligverdi</th>
-                <th>Gjeld</th>
-                <th>Inntekt</th>
-                <th>Ledig sikkerhet</th>
-                <th>Ledig 5x-kapasitet</th>
-                <th>Mulig?</th>
-              </tr>
-            </thead>
-            <tbody id="renovation-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: Costs -->
-    <div id="tab-costs" class="tab-content space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="card text-center">
-          <div class="card-header">Nåværende bolig</div>
-          <div class="card-value" id="cost-current-total">—</div>
-        </div>
-        <div class="card text-center">
-          <div class="card-header">Ny bolig</div>
-          <div class="card-value" id="cost-new-total">—</div>
-        </div>
-        <div class="card text-center">
-          <div class="card-header">Forskjell</div>
-          <div class="card-value" id="cost-difference">—</div>
-        </div>
-      </div>
-      <div class="card">
-        <p class="text-sm text-slate-600 mb-3" id="rental-info"></p>
-        <div class="chart-container" style="height: 250px"><canvas id="chart-costs"></canvas></div>
-      </div>
-      <div class="card bg-slate-50">
-        <h3 class="text-sm font-bold text-slate-700 mb-2">Månedlige utgifter ny bolig</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="input-group">
-            <label>Kommunale avgifter</label>
-            <input type="number" data-bind="newKommunale" step="500">
-          </div>
-          <div class="input-group">
-            <label>Forsikring</label>
-            <input type="number" data-bind="newInsurance" step="100">
-          </div>
-          <div class="input-group">
-            <label>Vedlikehold</label>
-            <input type="number" data-bind="newMaintenance" step="500">
-          </div>
-          <div class="input-group">
-            <label>Andre utgifter</label>
-            <input type="number" data-bind="newOther" step="500">
-          </div>
-        </div>
-        <h3 class="text-sm font-bold text-slate-700 mb-2 mt-4">Månedlige utgifter nåværende</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="input-group">
-            <label>Fellesutgifter</label>
-            <input type="number" data-bind="currentFellesutgifter" step="500">
-          </div>
-          <div class="input-group">
-            <label>Forsikring</label>
-            <input type="number" data-bind="currentInsurance" step="100">
-          </div>
-          <div class="input-group">
-            <label>Andre utgifter</label>
-            <input type="number" data-bind="currentOther" step="500">
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- TAB: Cash Flow -->
     <div id="tab-cashflow" class="tab-content space-y-4">
 
@@ -464,6 +416,10 @@
             <label style="text-transform:none; margin:0">Strøm/mnd:</label>
             <input type="number" data-bind="monthlyElectricity" step="500" style="width:100px">
           </div>
+          <div class="input-group" style="flex-direction:row; align-items:center; gap:0.5rem">
+            <label style="text-transform:none; margin:0">Bil/mnd <span class="info-tip" title="SIFOs egen bilkostnadskategori (tillegg til basisbudsjettet) — drivstoff, forsikring, årsavgift og bom, uten avskrivning. 1 fossilbil = kr 3 375/mnd (SIFO 2026).">?</span>:</label>
+            <input type="number" data-bind="monthlyCarCost" step="500" style="width:100px">
+          </div>
         </div>
       </div>
 
@@ -476,7 +432,7 @@
           <div class="mt-3 text-xs text-slate-500" id="tax-breakdown"></div>
         </div>
         <div class="card">
-          <h3 class="text-sm font-bold text-slate-700 mb-3">Inntekt → Utgifter</h3>
+          <h3 class="text-sm font-bold text-slate-700 mb-3">Kontantstrøm</h3>
           <div class="chart-container"><canvas id="chart-cashflow"></canvas></div>
         </div>
       </div>
@@ -489,18 +445,24 @@
             <span class="px-3 py-1 rounded-full text-xs font-semibold" id="bank-verdict">—</span>
           </div>
           <p class="text-xs text-slate-500 mb-3">
-            Banken bruker SIFO-budsjettet + boutgifter ved stresstest-rente for å vurdere om du har nok til overs.
-            Du må ha positivt likviditetsoverskudd for å få lån.
+            Banken bruker SIFO-budsjettet + boutgifter ved stresstest-rente for å vurdere om dere har nok til overs.
+            Dere må ha positivt likviditetsoverskudd for å få lån.
           </p>
           <div id="bank-perspective"></div>
         </div>
         <div class="card">
           <h3 class="text-sm font-bold text-slate-700 mb-3">SIFO Referansebudsjett — detaljer</h3>
           <p class="text-xs text-slate-500 mb-2">
-            Kilde: OsloMet/SIFO (2025). Inkluderer ikke bolig, strøm, ferie, alkohol/tobakk.
+            Kilde: OsloMet/SIFO. «Par uten barn» er 2026-tall, øvrige husholdningstyper er 2025-tall. Inkluderer ikke bolig, strøm, ferie, alkohol/tobakk.
           </p>
           <div id="sifo-breakdown"></div>
         </div>
+      </div>
+
+      <div class="card">
+        <h3 class="text-sm font-bold text-slate-700 mb-1">Tåleevne — likviditetsoverskudd mot boliglånsrente</h3>
+        <p class="text-xs text-slate-500 mb-3" id="resilience-note"></p>
+        <div class="chart-container" style="height: 340px"><canvas id="chart-resilience"></canvas></div>
       </div>
 
       <div class="card bg-amber-50 border border-amber-200">
@@ -508,21 +470,12 @@
         <p class="text-xs text-amber-700">
           SIFO-budsjettet er et referansebudsjett for forbruksutgifter utarbeidet av OsloMet. Det brukes av bankene som et minimum
           for hva en husholdning trenger til livsopphold utover boligkostnader. Banken beregner: netto inntekt - boutgifter (ved stresstest-rente)
-          - SIFO-utgifter - strøm = likviditetsoverskudd. Dette må være positivt for å få innvilget lån.<br><br>
-          Leieinntekt fra utleie i egen bolig (der du bruker &ge;50% selv) er skattefri.
+          - SIFO-utgifter (inkl. bil) - strøm = likviditetsoverskudd. Dette må være positivt for å få innvilget lån.<br><br>
+          Stresstest-renten følger utlånsforskriften: den høyeste av 7% og faktisk rente + 3 prosentpoeng.<br><br>
+          Bilkostnader er en egen tilleggskategori i SIFO-budsjettet, utenom basiskategoriene (mat, klær, fritid osv.) — 1 fossilbil utgjør kr 3 375/mnd (SIFO 2026). Strøm er derimot ikke en del av SIFO i det hele tatt og holdes utenfor.<br><br>
+          Leieinntekt fra utleie i egen bolig (der dere bruker &ge;50% selv) er skattefri.
           Banken kan vekte 60-80% av dokumentert leieinntekt mot gjeldsgraden.
         </p>
-      </div>
-    </div>
-
-    <!-- TAB: Net Worth / Investment -->
-    <div id="tab-networth" class="tab-content space-y-4">
-      <div class="card">
-        <h3 class="text-sm font-bold text-slate-700 mb-3">Formuesutvikling: Bolig vs. indeksfond</h3>
-        <p class="text-xs text-slate-500 mb-3">
-          Sammenligner netto formue fra boligkjøp (verdi minus lån) med alternativet å investere egenkapitalen i et globalt indeksfond.
-        </p>
-        <div class="chart-container" style="height: 350px"><canvas id="chart-networth"></canvas></div>
       </div>
     </div>
 
@@ -531,7 +484,7 @@
       <div class="card">
         <h3 class="text-sm font-bold text-slate-700 mb-3">Boligprisindeks Oslo (SSB)</h3>
         <p class="text-xs text-slate-500 mb-3">
-          Kilde: SSB tabell 07241 — Boligprisindeksen. 2015=100. Viser historisk prisutvikling for boliger i Oslo.
+          Kilde: SSB tabell 07241 — Boligprisindeksen. 2015=100. Støtter bankens sikkerhetsvurdering av pantet — stabil prisutvikling i Oslo.
         </p>
         <div class="chart-container" style="height: 300px"><canvas id="chart-pricehistory"></canvas></div>
         <p class="text-xs text-slate-400 mt-2" id="ssb-source-note">Fallback-data — laster live data fra SSB API...</p>
@@ -556,14 +509,6 @@
             <div class="text-xs text-slate-500">Beste år</div>
           </div>
         </div>
-      </div>
-      <div class="card bg-slate-50">
-        <h3 class="text-sm font-bold text-slate-700 mb-2">Om dataene</h3>
-        <p class="text-xs text-slate-500">
-          Prisindeksdata fra SSB (Statistisk sentralbyrå), tabell 07241. Indeksen dekker alle boligtyper i Oslo.
-          Historisk avkastning er ingen garanti for fremtidig utvikling. Rentenivået påvirker boligprisene betydelig —
-          perioder med renteøkninger (2022-2023) ga prisnedgang, mens rentekutt typisk driver prisene opp.
-        </p>
       </div>
     </div>
 
